@@ -17,7 +17,7 @@ import {
   Menu,
   UserCircle
 } from "lucide-react";
-import { AuthUserRole, useLogout } from "@workspace/api-client-react";
+import { AuthUserRole, useLogout, getGetMeQueryKey } from "@workspace/api-client-react";
 import { NutriSpaceLogo } from "@/components/nutrispace-logo";
 
 export function Sidebar() {
@@ -50,8 +50,10 @@ export function Sidebar() {
   const handleLogout = () => {
     logout.mutate(undefined, {
       onSuccess: () => {
+        // Navegação em nível de browser: garante limpeza total de estado
+        // React, React Query cache e cookies de sessão de uma vez só.
         queryClient.clear();
-        navigate('/login');
+        window.location.replace(`${import.meta.env.BASE_URL}login`);
       },
     });
   };
