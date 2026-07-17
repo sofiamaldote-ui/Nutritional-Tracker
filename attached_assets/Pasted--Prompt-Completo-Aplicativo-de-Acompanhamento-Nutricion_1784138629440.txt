@@ -1,0 +1,220 @@
+# Prompt Completo — Aplicativo de Acompanhamento Nutricional (build do zero)
+
+Construa um aplicativo web completo e funcional para uma **nutricionista autônoma**. O app tem duas naturezas que convivem:
+
+1. **CRM clínico** — cadastro de pacientes e histórico de consultas com anexos em PDF.
+2. **Canal de conteúdo (Biblioteca)** — a nutricionista publica materiais informativos e motivacionais para os pacientes, com segmentação por grupos. Esta é a área mais usada no dia a dia.
+
+Idioma de toda a interface: **português do Brasil**. O app deve ser **responsivo** (uso frequente no celular). **Persistência real** em banco de dados/armazenamento de arquivos — nada pode sumir ao recarregar.
+
+---
+
+## 👤 1. PERFIS DE USUÁRIO E LOGIN
+
+Dois papéis, com menus e permissões diferentes:
+
+- **NUTRICIONISTA (admin)** — acesso total.
+- **PACIENTE** — acesso só ao próprio conteúdo.
+
+### Autenticação
+- Login com e-mail + senha, sessão persistente (senhas com hash bcrypt).
+- Primeiro acesso: fluxo para criar a **conta da nutricionista**.
+- Após login, redirecionar conforme o papel: nutricionista → **Dashboard**; paciente → **Biblioteca (feed)**.
+- Usuário não autenticado que tentar acessar área interna → redireciona ao login.
+
+### ⚠️ MODELO DE CREDENCIAIS — ponto crítico (evitar conflito)
+**Só existe UM lugar que gerencia as credenciais do paciente: a área "Pacientes".** Não crie um segundo fluxo de criação de acesso em outro lugar — isso gera conflito de senhas.
+
+- **Configurações** cuida **apenas da conta da própria nutricionista** (trocar o próprio e-mail/senha). **Não** cria nem edita acesso de paciente.
+- O login do paciente é **criado automaticamente no cadastro do paciente** (ver seção Pacientes).
+- Alterar/redefinir a senha de um paciente é feito **exclusivamente no perfil do paciente**, dentro da área Pacientes.
+
+---
+
+## 🧭 2. MENU DE NAVEGAÇÃO
+
+Menu persistente em todas as telas (exceto login): **sidebar** no desktop, **hambúrguer + overlay** no mobile. Item ativo destacado. Rodapé com nome do usuário + botão **Sair**. Nenhum link morto.
+
+**Menu do NUTRICIONISTA:**
+1. 🏠 Dashboard
+2. 👥 Pacientes
+3. 📚 Biblioteca
+4. 👨‍👩‍👧 Grupos
+5. ⚙️ Configurações
+
+**Menu do PACIENTE:**
+1. 📚 Biblioteca (feed de conteúdos)
+2. 📋 Minhas Consultas
+3. ⚙️ Meu Perfil
+
+---
+
+## 🏠 3. DASHBOARD (nutricionista)
+
+Página inicial de resumo, distinta da lista de Pacientes. Cartões com:
+- Total de pacientes
+- Total de consultas registradas
+- Consultas mais recentes (nome, tipo, data)
+- Atalhos rápidos: "Novo paciente" e "Nova publicação"
+
+---
+
+## 👥 4. PACIENTES (com login automático e senha unificada)
+
+Rota `/pacientes`. Lista com: nome, e-mail (login), grupo(s), status do acesso, data de cadastro. Busca por nome/e-mail. Botão **"+ Novo paciente"**.
+
+### Cadastro de paciente — cria o login na MESMA ação
+Campos:
+- Nome completo *(obrigatório)*
+- E-mail *(obrigatório — será o login)*
+- Telefone / WhatsApp
+- Data de nascimento
+- Sexo
+- Grupo(s) — seletor múltiplo, **pode ficar vazio**
+
+Ao salvar, em **uma única transação**:
+1. Cria o registro do paciente.
+2. Cria automaticamente o **usuário de login** (papel: paciente) com o e-mail informado.
+3. Gera uma **senha provisória aleatória e segura** (hash bcrypt).
+4. Vincula aos grupos selecionados.
+5. **Exibe na tela o e-mail e a senha provisória**, com botão **"Copiar credenciais"** (para enviar por WhatsApp).
+- Se o e-mail já existir: erro claro ("Já existe um acesso com este e-mail").
+
+### Perfil do paciente (ao clicar num paciente)
+- Dados cadastrais (editar / excluir).
+- Grupos aos quais pertence (editar ali mesmo).
+- **Histórico de consultas** (ver seção 5).
+- **Gestão de senha — o único lugar que altera credencial do paciente:**
+  - Botão **"Redefinir senha"** com duas opções:
+    - **Gerar senha provisória** (aleatória) — exibida para copiar, **ou**
+    - **Definir senha manualmente** (a nutricionista digita a senha).
+  - Ambas atualizam a mesma credencial, sem duplicar acesso.
+  - (Opcional, se simples) exigir troca de senha no primeiro login do paciente.
+
+---
+
+## 📋 5. CONSULTAS FLEXÍVEIS + PDFs (dentro do perfil do paciente)
+
+Cada paciente tem um **número ilimitado de consultas**, listadas em ordem cronológica (mais recente no topo), com etiqueta colorida por tipo. Botão **"+ Adicionar consulta"** onde eu **escolho o tipo**. Posso editar e excluir qualquer consulta. Posso ter várias do mesmo tipo (ex: várias reavaliações).
+
+### Regras de PDF (valem para todos os uploads)
+- Upload fica **dentro do formulário da consulta**.
+- Arquivos **salvos de forma permanente** (armazenamento de arquivos do Replit), associados a paciente + consulta. Não podem sumir ao recarregar.
+- **Visualização inline** (viewer de PDF embutido) + botão **Download**.
+- Aceitar somente `.pdf`; mensagem de erro amigável caso contrário.
+
+### 📋 Tipo — Avaliação Inicial
+- **Dados:** data, peso (kg), altura (cm), **IMC calculado automaticamente** = peso ÷ (altura em m)².
+- **Circunferências (cm):** cintura, quadril, abdômen, braço, coxa, panturrilha.
+- **Bioimpedância:** upload do PDF do aparelho (inline + download).
+- **Observações gerais:** texto livre (queixas, histórico, hábitos, metas).
+
+### 🥗 Tipo — Cardápio
+- **Dados:** data, objetivo principal, VET (kcal/dia).
+- **Cardápio:** upload do PDF do software (Evo Nutri, DietBox, Dietpro etc.) — inline + download.
+- **Restrições/preferências:** alergias e intolerâncias, alimentos que não gosta, preferidos.
+- **Orientações adicionais:** texto livre (hidratação, suplementação, horários, preparo).
+
+### 📊 Tipo — Reavaliação
+- **Dados:** data, peso atual (kg), **IMC atual automático**.
+- **Circunferências atuais (cm):** cintura, quadril, abdômen, braço, coxa, panturrilha.
+- **Bioimpedância atualizada:** upload do novo PDF, exibido **lado a lado** com o PDF de uma consulta anterior.
+- **Comparativo automático:** ao criar, **selecionar qual consulta anterior** serve de base (padrão: a Avaliação Inicial). Calcular e exibir: variação de peso (± kg), variação de IMC, variação de cada circunferência (± cm), com **indicação visual de melhora / piora / estabilidade** por métrica.
+- **Avaliação da evolução:** texto livre para análise clínica e próximos passos.
+
+---
+
+## 👨‍👩‍👧 6. GRUPOS
+
+Rota `/grupos`. Área para organizar pacientes:
+- Criar / editar / excluir grupo (nome, cor de etiqueta, descrição).
+- Adicionar / remover pacientes do grupo (painel lateral).
+- Um paciente pode pertencer a **vários grupos**.
+- Ao abrir um grupo: membros + conteúdos publicados para ele.
+
+---
+
+## 📚 7. BIBLIOTECA — canal de conteúdo
+
+Rota `/biblioteca`. Onde a nutricionista publica conteúdo para engajar os pacientes.
+
+### Formatos de conteúdo (uma publicação pode combinar mais de um)
+- 🔗 **Link de vídeo/mídia social** (YouTube, Instagram, TikTok) — renderizar **player/preview embutido**, não link cru.
+- 📄 **PDF** — inline + download.
+- 🖼️ **Imagem** (JPG/PNG) — exibida no feed.
+- 📝 **Texto** — título + corpo.
+
+### Campos da publicação
+- Título
+- Descrição / corpo
+- **Categoria (obrigatória):** `Ebook` · `Receita` · `Vídeo` · `Artigo`
+- Anexos (PDF / imagem / link de vídeo)
+- **Destinatários** (segmentação, abaixo)
+- **Status:** Rascunho ou Publicado (alternância rápida)
+- Data de publicação
+
+### Segmentação (para quem vai)
+1. 🌍 **Geral (todos)**
+2. 👨‍👩‍👧 **Grupo(s) específico(s)** (pode escolher mais de um)
+3. 👤 **Paciente(s) específico(s)**
+
+Cada publicação exibe etiqueta de **categoria (colorida)** + etiqueta de **destinatário** (Geral / grupo / paciente).
+
+### Filtros na Biblioteca do ADMIN (duas dimensões independentes, combináveis)
+- **Status:** Todos · Publicados · Rascunho
+- **Categoria:** Todas · Ebook · Receita · Vídeo · Artigo
+- Os dois filtros funcionam **em paralelo** (ex: Rascunho + Receita).
+
+---
+
+## 🧑‍🤝‍🧑 8. PORTAL DO PACIENTE
+
+### 📚 Biblioteca / Feed
+- Mostra os conteúdos que o paciente pode ver, mais recentes no topo.
+- **Filtro por categoria:** Todas · Ebook · Receita · Vídeo · Artigo.
+- PDFs abrem inline; vídeos tocam embutidos; imagens no feed.
+- Marcador de "novo" para conteúdo não visto (se simples).
+
+### 📋 Minhas Consultas
+- Histórico das próprias consultas + PDFs (bioimpedância e cardápio) para visualizar inline e baixar.
+
+### ⚙️ Meu Perfil
+- Dados cadastrais e grupos (visualização).
+
+---
+
+## 🔒 9. REGRAS DE VISIBILIDADE (aplicar no BACKEND)
+
+**Não criar um grupo "Geral" artificial.** A lógica:
+- **"Geral (todos)"** é uma opção de publicação; **todo paciente vê o que é Geral**, tenha grupo ou não.
+- Paciente **sem grupo** é válido: vê publicações **Geral** + as **individuais** dele.
+- Paciente **com grupo(s)** vê: **Geral** + as dos **seus grupos** + as **individuais** dele.
+- Grupo é camada extra de segmentação, nunca requisito para receber conteúdo.
+
+⚠️ **Toda a filtragem de permissão é feita no backend** (a query só retorna o que o usuário tem direito de ver). Um paciente **nunca** pode acessar consultas, PDFs ou conteúdos de outro paciente — não basta esconder na interface.
+
+---
+
+## 🛠️ 10. DETALHES TÉCNICOS
+
+- Banco de dados relacional para pacientes, consultas, grupos, publicações, usuários/sessões.
+- Armazenamento de arquivos persistente para os PDFs e imagens.
+- Cálculos (IMC, comparativos) corretos e em tempo real.
+- Validação de formulários (numéricos, datas, apenas `.pdf` nos uploads de PDF).
+- Estados de carregamento e mensagens de erro/sucesso amigáveis.
+- Cada área com rota real e única; nenhum link quebrado.
+
+---
+
+## ✅ 11. CRITÉRIO DE "PRONTO"
+
+1. Crio a conta da nutricionista no primeiro acesso e caio no Dashboard com o menu em todas as telas.
+2. Navego por Dashboard, Pacientes, Biblioteca, Grupos e Configurações sem link quebrado.
+3. Cadastro um paciente e o **login é criado automaticamente**, com senha provisória exibida para copiar.
+4. Consigo **redefinir a senha do paciente** (gerada ou manual) **só pelo perfil dele** — sem conflito, sem duplicar acesso.
+5. Configurações altera **apenas** a minha própria conta.
+6. Adiciono a um paciente **quantas consultas eu quiser** (3 tipos), com PDFs inline + download; o IMC calcula sozinho; a reavaliação compara com a consulta escolhida.
+7. Crio grupos e organizo pacientes; um paciente pode ficar **sem grupo**.
+8. Publico conteúdo com **categoria** (Ebook/Receita/Vídeo/Artigo) e segmentação (Geral/grupo/paciente).
+9. Filtro a Biblioteca por **status e categoria ao mesmo tempo**.
+10. Como paciente, vejo **só** o que é meu (Geral + meus grupos + individuais), filtro por categoria, e vejo minhas consultas e PDFs.

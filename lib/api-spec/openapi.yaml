@@ -3,20 +3,36 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API for NutriApp - Nutritionist management platform
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: dashboard
+    description: Dashboard
+  - name: patients
+    description: Patients management
+  - name: groups
+    description: Groups management
+  - name: consultations
+    description: Consultations
+  - name: biblioteca
+    description: Content library
+  - name: portal
+    description: Patient portal
+  - name: storage
+    description: File storage
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +40,1317 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ───────────────────────────────────────────────
+  /auth/register:
+    post:
+      operationId: registerNutritionist
+      tags: [auth]
+      summary: Register first nutritionist account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "409":
+          description: Already registered
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "204":
+          description: Logged out
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+
+  /auth/me/password:
+    patch:
+      operationId: changeMyPassword
+      tags: [auth]
+      summary: Change own password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: Password changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+
+  # ── Dashboard ──────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  # ── Patients ───────────────────────────────────────────
+  /patients:
+    get:
+      operationId: listPatients
+      tags: [patients]
+      summary: List patients
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+    post:
+      operationId: createPatient
+      tags: [patients]
+      summary: Create patient (also creates login)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatientInput"
+      responses:
+        "201":
+          description: Patient created with credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientCreated"
+        "409":
+          description: Email already in use
+
+  /patients/{id}:
+    get:
+      operationId: getPatient
+      tags: [patients]
+      summary: Get patient details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Patient detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePatient
+      tags: [patients]
+      summary: Update patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatientUpdate"
+      responses:
+        "200":
+          description: Updated patient
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+    delete:
+      operationId: deletePatient
+      tags: [patients]
+      summary: Delete patient
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /patients/{id}/reset-password:
+    post:
+      operationId: resetPatientPassword
+      tags: [patients]
+      summary: Reset patient password
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: Password reset result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordResetResult"
+
+  # ── Groups ─────────────────────────────────────────────
+  /groups:
+    get:
+      operationId: listGroups
+      tags: [groups]
+      summary: List groups
+      responses:
+        "200":
+          description: List of groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+    post:
+      operationId: createGroup
+      tags: [groups]
+      summary: Create group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupInput"
+      responses:
+        "201":
+          description: Created group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+
+  /groups/{id}:
+    get:
+      operationId: getGroup
+      tags: [groups]
+      summary: Get group with members
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Group detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateGroup
+      tags: [groups]
+      summary: Update group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupUpdate"
+      responses:
+        "200":
+          description: Updated group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+    delete:
+      operationId: deleteGroup
+      tags: [groups]
+      summary: Delete group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /groups/{id}/members:
+    post:
+      operationId: addGroupMember
+      tags: [groups]
+      summary: Add patient to group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupMemberInput"
+      responses:
+        "201":
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessMessage"
+
+  /groups/{id}/members/{patientId}:
+    delete:
+      operationId: removeGroupMember
+      tags: [groups]
+      summary: Remove patient from group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Removed
+
+  # ── Consultations ──────────────────────────────────────
+  /patients/{patientId}/consultations:
+    get:
+      operationId: listConsultations
+      tags: [consultations]
+      summary: List patient consultations
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Consultations list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Consultation"
+    post:
+      operationId: createConsultation
+      tags: [consultations]
+      summary: Create consultation
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsultationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Consultation"
+
+  /patients/{patientId}/consultations/{consultationId}:
+    get:
+      operationId: getConsultation
+      tags: [consultations]
+      summary: Get consultation detail
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consultationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Consultation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsultationDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateConsultation
+      tags: [consultations]
+      summary: Update consultation
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consultationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsultationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsultationDetail"
+    delete:
+      operationId: deleteConsultation
+      tags: [consultations]
+      summary: Delete consultation
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consultationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Biblioteca (admin) ─────────────────────────────────
+  /biblioteca:
+    get:
+      operationId: listPublications
+      tags: [biblioteca]
+      summary: List publications (admin)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [all, published, draft]
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [all, ebook, receita, video, artigo]
+      responses:
+        "200":
+          description: Publications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Publication"
+    post:
+      operationId: createPublication
+      tags: [biblioteca]
+      summary: Create publication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicationInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publication"
+
+  /biblioteca/{id}:
+    get:
+      operationId: getPublication
+      tags: [biblioteca]
+      summary: Get publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Publication
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publication"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePublication
+      tags: [biblioteca]
+      summary: Update publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicationUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publication"
+    delete:
+      operationId: deletePublication
+      tags: [biblioteca]
+      summary: Delete publication
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /biblioteca/{id}/toggle-status:
+    patch:
+      operationId: togglePublicationStatus
+      tags: [biblioteca]
+      summary: Toggle publication status (draft/published)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Publication"
+
+  # ── Patient Portal ─────────────────────────────────────
+  /portal/feed:
+    get:
+      operationId: getPatientFeed
+      tags: [portal]
+      summary: Get patient's content feed
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [all, ebook, receita, video, artigo]
+      responses:
+        "200":
+          description: Feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Publication"
+
+  /portal/consultations:
+    get:
+      operationId: getMyConsultations
+      tags: [portal]
+      summary: Get patient's own consultations
+      responses:
+        "200":
+          description: My consultations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Consultation"
+
+  /portal/consultations/{consultationId}:
+    get:
+      operationId: getMyConsultation
+      tags: [portal]
+      summary: Get patient's consultation detail
+      parameters:
+        - name: consultationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Consultation detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsultationDetail"
+        "404":
+          description: Not found
+
+  /portal/profile:
+    get:
+      operationId: getMyProfile
+      tags: [portal]
+      summary: Get patient's own profile
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDetail"
+
+  # ── Storage ────────────────────────────────────────────
+  /storage/uploads/request-url:
+    post:
+      operationId: requestUploadUrl
+      tags: [storage]
+      summary: Request presigned upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadUrlRequest"
+      responses:
+        "200":
+          description: Upload URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadUrlResponse"
+
+  /storage/objects/{objectPath}:
+    get:
+      operationId: getStorageObject
+      tags: [storage]
+      summary: Serve storage object
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Object data
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    SuccessMessage:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    # ── Auth Schemas ──────────────────────────────────────
+    AuthUser:
+      type: object
+      required: [id, email, role, name]
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [nutricionista, paciente]
+        patientId:
+          type: ["integer", "null"]
+
+    RegisterInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 6
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+
+    ChangePasswordInput:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+
+    # ── Dashboard Schemas ─────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [totalPatients, totalConsultations, recentConsultations, recentPatients]
+      properties:
+        totalPatients:
+          type: integer
+        totalConsultations:
+          type: integer
+        totalPublications:
+          type: integer
+        totalGroups:
+          type: integer
+        recentConsultations:
+          type: array
+          items:
+            $ref: "#/components/schemas/RecentConsultation"
+        recentPatients:
+          type: array
+          items:
+            $ref: "#/components/schemas/Patient"
+
+    RecentConsultation:
+      type: object
+      required: [id, patientId, patientName, type, date]
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        patientName:
+          type: string
+        type:
+          type: string
+        date:
+          type: string
+
+    # ── Patient Schemas ───────────────────────────────────
+    Patient:
+      type: object
+      required: [id, name, email, createdAt, hasAccess]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        birthDate:
+          type: ["string", "null"]
+        sex:
+          type: ["string", "null"]
+        hasAccess:
+          type: boolean
+        createdAt:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupSummary"
+
+    PatientDetail:
+      type: object
+      required: [id, name, email, createdAt, hasAccess, groups, consultationCount]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        birthDate:
+          type: ["string", "null"]
+        sex:
+          type: ["string", "null"]
+        hasAccess:
+          type: boolean
+        createdAt:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupSummary"
+        consultationCount:
+          type: integer
+
+    PatientCreated:
+      type: object
+      required: [patient, provisionalPassword]
+      properties:
+        patient:
+          $ref: "#/components/schemas/Patient"
+        provisionalPassword:
+          type: string
+
+    PatientInput:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+        phone:
+          type: string
+        birthDate:
+          type: string
+        sex:
+          type: string
+          enum: [masculino, feminino, outro]
+        groupIds:
+          type: array
+          items:
+            type: integer
+
+    PatientUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: ["string", "null"]
+        birthDate:
+          type: ["string", "null"]
+        sex:
+          type: ["string", "null"]
+        groupIds:
+          type: array
+          items:
+            type: integer
+
+    ResetPasswordInput:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: [generate, manual]
+        newPassword:
+          type: ["string", "null"]
+
+    PasswordResetResult:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        provisionalPassword:
+          type: ["string", "null"]
+
+    # ── Group Schemas ─────────────────────────────────────
+    GroupSummary:
+      type: object
+      required: [id, name, color]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+
+    Group:
+      type: object
+      required: [id, name, color, createdAt, memberCount]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        memberCount:
+          type: integer
+
+    GroupDetail:
+      type: object
+      required: [id, name, color, createdAt, members]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        color:
+          type: string
+        description:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/Patient"
+
+    GroupInput:
+      type: object
+      required: [name, color]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        color:
+          type: string
+        description:
+          type: string
+
+    GroupUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        color:
+          type: string
+        description:
+          type: ["string", "null"]
+
+    GroupMemberInput:
+      type: object
+      required: [patientId]
+      properties:
+        patientId:
+          type: integer
+
+    # ── Consultation Schemas ───────────────────────────────
+    Consultation:
+      type: object
+      required: [id, patientId, type, date, createdAt]
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        type:
+          type: string
+          enum: [avaliacao_inicial, cardapio, reavaliacao]
+        date:
+          type: string
+        weight:
+          type: ["number", "null"]
+        height:
+          type: ["number", "null"]
+        bmi:
+          type: ["number", "null"]
+        createdAt:
+          type: string
+
+    ConsultationDetail:
+      type: object
+      required: [id, patientId, type, date, createdAt]
+      properties:
+        id:
+          type: integer
+        patientId:
+          type: integer
+        type:
+          type: string
+          enum: [avaliacao_inicial, cardapio, reavaliacao]
+        date:
+          type: string
+        createdAt:
+          type: string
+        # Avaliação Inicial
+        weight:
+          type: ["number", "null"]
+        height:
+          type: ["number", "null"]
+        bmi:
+          type: ["number", "null"]
+        waistCm:
+          type: ["number", "null"]
+        hipCm:
+          type: ["number", "null"]
+        abdomenCm:
+          type: ["number", "null"]
+        armCm:
+          type: ["number", "null"]
+        thighCm:
+          type: ["number", "null"]
+        calfCm:
+          type: ["number", "null"]
+        bioimpedancePdfPath:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        # Cardápio
+        objective:
+          type: ["string", "null"]
+        vetKcal:
+          type: ["number", "null"]
+        menuPdfPath:
+          type: ["string", "null"]
+        restrictions:
+          type: ["string", "null"]
+        additionalGuidance:
+          type: ["string", "null"]
+        # Reavaliação
+        baselineConsultationId:
+          type: ["integer", "null"]
+        evolutionNotes:
+          type: ["string", "null"]
+        comparison:
+          $ref: "#/components/schemas/ConsultationComparison"
+
+    ConsultationComparison:
+      type: object
+      properties:
+        weightDelta:
+          type: ["number", "null"]
+        bmiDelta:
+          type: ["number", "null"]
+        waistDelta:
+          type: ["number", "null"]
+        hipDelta:
+          type: ["number", "null"]
+        abdomenDelta:
+          type: ["number", "null"]
+        armDelta:
+          type: ["number", "null"]
+        thighDelta:
+          type: ["number", "null"]
+        calfDelta:
+          type: ["number", "null"]
+
+    ConsultationInput:
+      type: object
+      required: [type, date]
+      properties:
+        type:
+          type: string
+          enum: [avaliacao_inicial, cardapio, reavaliacao]
+        date:
+          type: string
+        # Avaliação Inicial / Reavaliação
+        weight:
+          type: ["number", "null"]
+        height:
+          type: ["number", "null"]
+        waistCm:
+          type: ["number", "null"]
+        hipCm:
+          type: ["number", "null"]
+        abdomenCm:
+          type: ["number", "null"]
+        armCm:
+          type: ["number", "null"]
+        thighCm:
+          type: ["number", "null"]
+        calfCm:
+          type: ["number", "null"]
+        bioimpedancePdfPath:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        # Cardápio
+        objective:
+          type: ["string", "null"]
+        vetKcal:
+          type: ["number", "null"]
+        menuPdfPath:
+          type: ["string", "null"]
+        restrictions:
+          type: ["string", "null"]
+        additionalGuidance:
+          type: ["string", "null"]
+        # Reavaliação
+        baselineConsultationId:
+          type: ["integer", "null"]
+        evolutionNotes:
+          type: ["string", "null"]
+
+    ConsultationUpdate:
+      type: object
+      properties:
+        date:
+          type: string
+        weight:
+          type: ["number", "null"]
+        height:
+          type: ["number", "null"]
+        waistCm:
+          type: ["number", "null"]
+        hipCm:
+          type: ["number", "null"]
+        abdomenCm:
+          type: ["number", "null"]
+        armCm:
+          type: ["number", "null"]
+        thighCm:
+          type: ["number", "null"]
+        calfCm:
+          type: ["number", "null"]
+        bioimpedancePdfPath:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        objective:
+          type: ["string", "null"]
+        vetKcal:
+          type: ["number", "null"]
+        menuPdfPath:
+          type: ["string", "null"]
+        restrictions:
+          type: ["string", "null"]
+        additionalGuidance:
+          type: ["string", "null"]
+        baselineConsultationId:
+          type: ["integer", "null"]
+        evolutionNotes:
+          type: ["string", "null"]
+
+    # ── Publication Schemas ───────────────────────────────
+    Publication:
+      type: object
+      required: [id, title, category, status, visibility, createdAt, publishedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [ebook, receita, video, artigo]
+        status:
+          type: string
+          enum: [rascunho, publicado]
+        visibility:
+          type: string
+          enum: [geral, grupos, pacientes]
+        videoUrl:
+          type: ["string", "null"]
+        pdfPath:
+          type: ["string", "null"]
+        imagePath:
+          type: ["string", "null"]
+        groupIds:
+          type: array
+          items:
+            type: integer
+        patientIds:
+          type: array
+          items:
+            type: integer
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/GroupSummary"
+        createdAt:
+          type: string
+        publishedAt:
+          type: ["string", "null"]
+        isNew:
+          type: boolean
+
+    PublicationInput:
+      type: object
+      required: [title, category, visibility]
+      properties:
+        title:
+          type: string
+          minLength: 1
+        description:
+          type: string
+        category:
+          type: string
+          enum: [ebook, receita, video, artigo]
+        status:
+          type: string
+          enum: [rascunho, publicado]
+        visibility:
+          type: string
+          enum: [geral, grupos, pacientes]
+        videoUrl:
+          type: string
+        pdfPath:
+          type: string
+        imagePath:
+          type: string
+        groupIds:
+          type: array
+          items:
+            type: integer
+        patientIds:
+          type: array
+          items:
+            type: integer
+
+    PublicationUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+          enum: [ebook, receita, video, artigo]
+        status:
+          type: string
+          enum: [rascunho, publicado]
+        visibility:
+          type: string
+          enum: [geral, grupos, pacientes]
+        videoUrl:
+          type: ["string", "null"]
+        pdfPath:
+          type: ["string", "null"]
+        imagePath:
+          type: ["string", "null"]
+        groupIds:
+          type: array
+          items:
+            type: integer
+        patientIds:
+          type: array
+          items:
+            type: integer
+
+    # ── Storage Schemas ───────────────────────────────────
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
