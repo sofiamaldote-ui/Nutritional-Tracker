@@ -44,7 +44,9 @@ export default function PacienteDetailPage() {
   const [isConsultationDialogOpen, setIsConsultationDialogOpen] = useState(false);
   const [resetData, setResetData] = useState<{ message: string, password?: string | null } | null>(null);
 
-  const { data: patient, isLoading: isPatientLoading } = useGetPatient(patientId);
+  const { data: patient, isLoading: isPatientLoading, isError: isPatientError } = useGetPatient(patientId, {
+    query: { queryKey: getGetPatientQueryKey(patientId) }
+  });
   const { data: consultations = [], isLoading: isConsultationsLoading } = useListConsultations(
     patientId,
     { query: { enabled: !!patientId, queryKey: getListConsultationsQueryKey(patientId) } }
@@ -92,8 +94,19 @@ export default function PacienteDetailPage() {
     });
   };
 
-  if (isPatientLoading || !patient) {
+  if (isPatientLoading) {
     return <div className="h-32 flex items-center justify-center"><div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>;
+  }
+
+  if (isPatientError || !patient) {
+    return (
+      <div className="h-64 flex flex-col items-center justify-center gap-4 text-center">
+        <p className="text-muted-foreground">Não foi possível carregar os dados do paciente.</p>
+        <Button variant="outline" asChild>
+          <Link href="/pacientes"><ArrowLeft className="size-4 mr-2" /> Voltar para Pacientes</Link>
+        </Button>
+      </div>
+    );
   }
 
   const formatConsultationType = (type: string) => {

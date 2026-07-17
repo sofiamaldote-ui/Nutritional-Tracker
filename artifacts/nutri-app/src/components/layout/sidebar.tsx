@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { LayoutContext } from "@/lib/constants";
 import { useAuth } from "@/hooks/use-auth";
 import { useContext } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -20,9 +21,10 @@ import { AuthUserRole, useLogout } from "@workspace/api-client-react";
 import { NutriSpaceLogo } from "@/components/nutrispace-logo";
 
 export function Sidebar() {
-  const [location] = useLocation();
-  const { user, refetch } = useAuth();
+  const [location, navigate] = useLocation();
+  const { user } = useAuth();
   const { isSidebarOpen, setSidebarOpen } = useContext(LayoutContext);
+  const queryClient = useQueryClient();
   const logout = useLogout();
 
   if (!user) return null;
@@ -47,7 +49,10 @@ export function Sidebar() {
 
   const handleLogout = () => {
     logout.mutate(undefined, {
-      onSuccess: () => refetch(),
+      onSuccess: () => {
+        queryClient.clear();
+        navigate('/login');
+      },
     });
   };
 

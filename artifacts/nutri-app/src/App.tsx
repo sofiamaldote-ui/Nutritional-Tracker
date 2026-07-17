@@ -22,7 +22,19 @@ import PortalFeedPage from '@/pages/portal-feed';
 import PortalConsultasPage from '@/pages/portal-consultas';
 import PortalPerfilPage from '@/pages/portal-perfil';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Não retentar em 401/403 — o usuário está deslogado
+      retry: (failureCount, error: unknown) => {
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 403) return false;
+        return failureCount < 1;
+      },
+      staleTime: 30_000, // 30s — evita refetches desnecessários ao navegar
+    },
+  },
+});
 
 function Router() {
   return (
