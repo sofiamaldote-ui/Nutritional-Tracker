@@ -65,7 +65,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
       <div className="w-full max-w-[400px]">
         <div className="mb-8 flex flex-col items-center justify-center">
-          <NutriSpaceLogo size={56} className="mb-4 drop-shadow-md" />
+          <NutriSpaceLogo size={96} className="mb-2" variant="light" />
           <h1 className="text-3xl font-bold tracking-tight text-primary font-display">NutriSpace</h1>
           <p className="text-muted-foreground mt-2">Acesso ao sistema</p>
         </div>

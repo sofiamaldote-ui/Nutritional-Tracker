@@ -57,7 +57,7 @@ export function Sidebar() {
     <div className="flex h-full flex-col">
       <div className="p-6">
         <div className="flex items-center gap-2.5 font-display text-xl font-bold tracking-tight">
-          <NutriSpaceLogo size={34} />
+          <NutriSpaceLogo size={36} variant="dark" />
           <span className="text-sidebar-foreground">NutriSpace</span>
         </div>
       </div>
@@ -145,7 +145,7 @@ export function MobileHeader() {
         <span className="sr-only">Menu</span>
       </Button>
       <div className="flex items-center gap-2 font-display text-lg font-bold tracking-tight text-primary">
-        <NutriSpaceLogo size={26} />
+        <NutriSpaceLogo size={28} variant="dark" />
         NutriSpace
       </div>
     </header>
