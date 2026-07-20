@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useListPatients, useCreatePatient, PatientInputSex, getListPatientsQueryKey } from "@workspace/api-client-react";
+import { useListPatients, useCreatePatient, useDeletePatient, PatientInputSex, getListPatientsQueryKey } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, UserPlus, MoreHorizontal } from "lucide-react";
-import { Link } from "wouter";
+import { Search, Plus, UserPlus, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Link, useLocation } from "wouter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,7 +46,14 @@ import {
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const patientSchema = z.object({
   name: z.string().min(2, "Nome é obrigatório"),
@@ -61,12 +68,28 @@ export default function PacientesPage() {
   const debouncedSearch = useDebounce(search, 500);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [createdPatientData, setCreatedPatientData] = useState<{name: string, password: string} | null>(null);
+  const [patientToDelete, setPatientToDelete] = useState<{id: number, name: string} | null>(null);
   
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   const { data: patients = [], isLoading } = useListPatients({ search: debouncedSearch || undefined });
   const createPatient = useCreatePatient();
+  const deletePatient = useDeletePatient();
+
+  const handleDelete = () => {
+    if (!patientToDelete) return;
+    deletePatient.mutate({ id: patientToDelete.id }, {
+      onSuccess: () => {
+        toast({ title: "Paciente removido com sucesso." });
+        queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
+        setPatientToDelete(null);
+      },
+      onError: () => {
+        toast({ variant: "destructive", title: "Erro ao remover paciente." });
+      },
+    });
+  };
 
   const form = useForm<z.infer<typeof patientSchema>>({
     resolver: zodResolver(patientSchema),
@@ -291,11 +314,29 @@ export default function PacientesPage() {
                     {format(new Date(patient.createdAt), "dd/MM/yyyy")}
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link href={`/pacientes/${patient.id}`}>
-                        <MoreHorizontal className="size-4" />
-                      </Link>
-                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/pacientes/${patient.id}`} className="flex items-center gap-2 cursor-pointer">
+                            <Eye className="size-4" />
+                            Ver detalhes
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
+                          onSelect={() => setPatientToDelete({ id: patient.id, name: patient.name })}
+                        >
+                          <Trash2 className="size-4" />
+                          Excluir paciente
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -303,6 +344,26 @@ export default function PacientesPage() {
           </Table>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!patientToDelete} onOpenChange={(open) => !open && setPatientToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir paciente</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir <strong>{patientToDelete?.name}</strong>? Esta ação removerá o paciente, seu acesso ao portal e todos os dados vinculados. Ela não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPatientToDelete(null)} disabled={deletePatient.isPending}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deletePatient.isPending}>
+              {deletePatient.isPending ? "Removendo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Provisional Password Dialog */}
       <Dialog open={!!createdPatientData} onOpenChange={(open) => !open && setCreatedPatientData(null)}>
