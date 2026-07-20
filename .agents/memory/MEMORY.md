@@ -1,0 +1,1 @@
+- [Session table manual creation](session-table.md) — "session" table not in Drizzle schema; must be recreated manually after every drizzle-kit push or it breaks login with 500.
