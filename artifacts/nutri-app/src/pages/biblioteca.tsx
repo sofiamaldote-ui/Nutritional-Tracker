@@ -3,6 +3,7 @@ import {
   useListPublications, 
   useCreatePublication, 
   useTogglePublicationStatus,
+  useDeletePublication,
   getListPublicationsQueryKey,
   PublicationCategory,
   PublicationVisibility,
@@ -14,7 +15,7 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, BookOpen, FileVideo, FileText, Image as ImageIcon, Eye, EyeOff, FileCode2, PlayCircle } from "lucide-react";
+import { Plus, BookOpen, FileVideo, FileText, Image as ImageIcon, Eye, EyeOff, FileCode2, PlayCircle, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
@@ -47,6 +48,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -67,6 +69,7 @@ export default function BibliotecaPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<ListPublicationsStatus>(ListPublicationsStatus.all);
   const [categoryFilter, setCategoryFilter] = useState<ListPublicationsCategory>(ListPublicationsCategory.all);
+  const [pubToDelete, setPubToDelete] = useState<{id: number, title: string} | null>(null);
   
   // File state for new pub
   const [pdfPath, setPdfPath] = useState<string>("");
@@ -80,6 +83,19 @@ export default function BibliotecaPage() {
   const { data: groups = [] } = useListGroups();
   const createPub = useCreatePublication();
   const toggleStatus = useTogglePublicationStatus();
+  const deletePub = useDeletePublication();
+
+  const handleDelete = () => {
+    if (!pubToDelete) return;
+    deletePub.mutate({ id: pubToDelete.id }, {
+      onSuccess: () => {
+        toast({ title: "Publicação excluída." });
+        queryClient.invalidateQueries({ queryKey: getListPublicationsQueryKey() });
+        setPubToDelete(null);
+      },
+      onError: () => toast({ variant: "destructive", title: "Erro ao excluir publicação." }),
+    });
+  };
 
   const form = useForm<z.infer<typeof pubSchema>>({
     resolver: zodResolver(pubSchema),
@@ -396,7 +412,7 @@ export default function BibliotecaPage() {
                 </div>
               </CardContent>
               
-              <CardFooter className="border-t bg-muted/10 p-3 flex justify-between items-center">
+              <CardFooter className="border-t bg-muted/10 p-3 flex justify-between items-center gap-2">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-medium flex items-center gap-1.5 ${pub.status === 'publicado' ? 'text-green-600' : 'text-orange-500'}`}>
                     {pub.status === 'publicado' ? <Eye className="size-3.5" /> : <EyeOff className="size-3.5" />}
@@ -404,20 +420,49 @@ export default function BibliotecaPage() {
                   </span>
                 </div>
                 
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className={pub.status === 'rascunho' ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground" : ""}
-                  onClick={() => handleToggleStatus(pub.id, pub.status)}
-                  disabled={toggleStatus.isPending}
-                >
-                  {pub.status === 'publicado' ? 'Ocultar' : 'Publicar'}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className={pub.status === 'rascunho' ? "bg-primary text-primary-foreground border-primary hover:bg-primary/90 hover:text-primary-foreground" : ""}
+                    onClick={() => handleToggleStatus(pub.id, pub.status)}
+                    disabled={toggleStatus.isPending}
+                  >
+                    {pub.status === 'publicado' ? 'Ocultar' : 'Publicar'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    onClick={() => setPubToDelete({ id: pub.id, title: pub.title })}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           ))}
         </div>
       )}
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!pubToDelete} onOpenChange={(open) => !open && setPubToDelete(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Excluir publicação</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir <strong>"{pubToDelete?.title}"</strong>? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPubToDelete(null)} disabled={deletePub.isPending}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deletePub.isPending}>
+              {deletePub.isPending ? "Excluindo..." : "Excluir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
