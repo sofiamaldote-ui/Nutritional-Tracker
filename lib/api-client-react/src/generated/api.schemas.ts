@@ -196,6 +196,43 @@ export interface GroupMemberInput {
   patientId: number;
 }
 
+export type ConsultationAttachmentSection = typeof ConsultationAttachmentSection[keyof typeof ConsultationAttachmentSection];
+
+
+export const ConsultationAttachmentSection = {
+  exames: 'exames',
+  cardapios: 'cardapios',
+} as const;
+
+export interface ConsultationAttachment {
+  id: number;
+  consultationId: number;
+  section: ConsultationAttachmentSection;
+  fileName: string;
+  filePath: string;
+  /** @nullable */
+  mimeType?: string | null;
+  /** @nullable */
+  sizeBytes?: number | null;
+  uploadedAt: string;
+}
+
+export type ConsultationAttachmentInputSection = typeof ConsultationAttachmentInputSection[keyof typeof ConsultationAttachmentInputSection];
+
+
+export const ConsultationAttachmentInputSection = {
+  exames: 'exames',
+  cardapios: 'cardapios',
+} as const;
+
+export interface ConsultationAttachmentInput {
+  section: ConsultationAttachmentInputSection;
+  fileName: string;
+  filePath: string;
+  mimeType?: string;
+  sizeBytes?: number;
+}
+
 export type ConsultationType = typeof ConsultationType[keyof typeof ConsultationType];
 
 

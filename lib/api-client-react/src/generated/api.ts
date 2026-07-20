@@ -23,6 +23,8 @@ import type {
   AuthUser,
   ChangePasswordInput,
   Consultation,
+  ConsultationAttachment,
+  ConsultationAttachmentInput,
   ConsultationDetail,
   ConsultationInput,
   ConsultationUpdate,
@@ -1702,6 +1704,237 @@ export const useCreateConsultation = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getCreateConsultationMutationOptions(options));
+    }
+
+export const getListAttachmentsUrl = (patientId: number,
+    consultationId: number,) => {
+
+
+
+
+  return `/api/patients/${patientId}/consultations/${consultationId}/attachments`
+}
+
+/**
+ * @summary List consultation attachments
+ */
+export const listAttachments = async (patientId: number,
+    consultationId: number, options?: RequestInit): Promise<ConsultationAttachment[]> => {
+
+  return customFetch<ConsultationAttachment[]>(getListAttachmentsUrl(patientId,consultationId),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListAttachmentsQueryKey = (patientId: number,
+    consultationId: number,) => {
+    return [
+    `/api/patients/${patientId}/consultations/${consultationId}/attachments`
+    ] as const;
+    }
+
+
+export const getListAttachmentsQueryOptions = <TData = Awaited<ReturnType<typeof listAttachments>>, TError = ErrorType<unknown>>(patientId: number,
+    consultationId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAttachments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListAttachmentsQueryKey(patientId,consultationId);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listAttachments>>> = ({ signal }) => listAttachments(patientId,consultationId, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, enabled: patientId !== null && patientId !== undefined && consultationId !== null && consultationId !== undefined, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listAttachments>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListAttachmentsQueryResult = NonNullable<Awaited<ReturnType<typeof listAttachments>>>
+export type ListAttachmentsQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List consultation attachments
+ */
+
+export function useListAttachments<TData = Awaited<ReturnType<typeof listAttachments>>, TError = ErrorType<unknown>>(
+ patientId: number,
+    consultationId: number, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listAttachments>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListAttachmentsQueryOptions(patientId,consultationId,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateAttachmentUrl = (patientId: number,
+    consultationId: number,) => {
+
+
+
+
+  return `/api/patients/${patientId}/consultations/${consultationId}/attachments`
+}
+
+/**
+ * @summary Register a new attachment after upload
+ */
+export const createAttachment = async (patientId: number,
+    consultationId: number,
+    consultationAttachmentInput: ConsultationAttachmentInput, options?: RequestInit): Promise<ConsultationAttachment> => {
+
+  return customFetch<ConsultationAttachment>(getCreateAttachmentUrl(patientId,consultationId),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(consultationAttachmentInput)
+  }
+);}
+
+
+
+
+
+export const getCreateAttachmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAttachment>>, TError,{patientId: number;consultationId: number;data: BodyType<ConsultationAttachmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createAttachment>>, TError,{patientId: number;consultationId: number;data: BodyType<ConsultationAttachmentInput>}, TContext> => {
+
+const mutationKey = ['createAttachment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createAttachment>>, {patientId: number;consultationId: number;data: BodyType<ConsultationAttachmentInput>}> = (props) => {
+          const {patientId,consultationId,data} = props ?? {};
+
+          return  createAttachment(patientId,consultationId,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateAttachmentMutationResult = NonNullable<Awaited<ReturnType<typeof createAttachment>>>
+    export type CreateAttachmentMutationBody = BodyType<ConsultationAttachmentInput>
+    export type CreateAttachmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Register a new attachment after upload
+ */
+export const useCreateAttachment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createAttachment>>, TError,{patientId: number;consultationId: number;data: BodyType<ConsultationAttachmentInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createAttachment>>,
+        TError,
+        {patientId: number;consultationId: number;data: BodyType<ConsultationAttachmentInput>},
+        TContext
+      > => {
+      return useMutation(getCreateAttachmentMutationOptions(options));
+    }
+
+export const getDeleteAttachmentUrl = (patientId: number,
+    consultationId: number,
+    attachmentId: number,) => {
+
+
+
+
+  return `/api/patients/${patientId}/consultations/${consultationId}/attachments/${attachmentId}`
+}
+
+/**
+ * @summary Delete an attachment
+ */
+export const deleteAttachment = async (patientId: number,
+    consultationId: number,
+    attachmentId: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteAttachmentUrl(patientId,consultationId,attachmentId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteAttachmentMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAttachment>>, TError,{patientId: number;consultationId: number;attachmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteAttachment>>, TError,{patientId: number;consultationId: number;attachmentId: number}, TContext> => {
+
+const mutationKey = ['deleteAttachment'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteAttachment>>, {patientId: number;consultationId: number;attachmentId: number}> = (props) => {
+          const {patientId,consultationId,attachmentId} = props ?? {};
+
+          return  deleteAttachment(patientId,consultationId,attachmentId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteAttachmentMutationResult = NonNullable<Awaited<ReturnType<typeof deleteAttachment>>>
+
+    export type DeleteAttachmentMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete an attachment
+ */
+export const useDeleteAttachment = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteAttachment>>, TError,{patientId: number;consultationId: number;attachmentId: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteAttachment>>,
+        TError,
+        {patientId: number;consultationId: number;attachmentId: number},
+        TContext
+      > => {
+      return useMutation(getDeleteAttachmentMutationOptions(options));
     }
 
 export const getGetConsultationUrl = (patientId: number,

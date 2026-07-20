@@ -6,6 +6,7 @@ import dashboardRouter from "./dashboard";
 import patientsRouter from "./patients";
 import groupsRouter from "./groups";
 import consultationsRouter from "./consultations";
+import attachmentsRouter from "./attachments";
 import bibliotecaRouter from "./biblioteca";
 import portalRouter from "./portal";
 
@@ -18,6 +19,7 @@ router.use(dashboardRouter);
 router.use(patientsRouter);
 router.use(groupsRouter);
 router.use(consultationsRouter);
+router.use(attachmentsRouter);
 router.use(bibliotecaRouter);
 router.use(portalRouter);
 

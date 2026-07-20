@@ -20,6 +20,8 @@ tags:
     description: Groups management
   - name: consultations
     description: Consultations
+  - name: attachments
+    description: Consultation attachments
   - name: biblioteca
     description: Content library
   - name: portal
@@ -442,6 +444,85 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Consultation"
+
+  /patients/{patientId}/consultations/{consultationId}/attachments:
+    get:
+      operationId: listAttachments
+      tags: [attachments]
+      summary: List consultation attachments
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consultationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ConsultationAttachment"
+    post:
+      operationId: createAttachment
+      tags: [attachments]
+      summary: Register a new attachment after upload
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consultationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConsultationAttachmentInput"
+      responses:
+        "201":
+          description: Created attachment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConsultationAttachment"
+
+  /patients/{patientId}/consultations/{consultationId}/attachments/{attachmentId}:
+    delete:
+      operationId: deleteAttachment
+      tags: [attachments]
+      summary: Delete an attachment
+      parameters:
+        - name: patientId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: consultationId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: attachmentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /patients/{patientId}/consultations/{consultationId}:
     get:
@@ -1036,6 +1117,45 @@ components:
       required: [patientId]
       properties:
         patientId:
+          type: integer
+
+    # ── Attachment Schemas ────────────────────────────────
+    ConsultationAttachment:
+      type: object
+      required: [id, consultationId, section, fileName, filePath, uploadedAt]
+      properties:
+        id:
+          type: integer
+        consultationId:
+          type: integer
+        section:
+          type: string
+          enum: [exames, cardapios]
+        fileName:
+          type: string
+        filePath:
+          type: string
+        mimeType:
+          type: ["string", "null"]
+        sizeBytes:
+          type: ["integer", "null"]
+        uploadedAt:
+          type: string
+
+    ConsultationAttachmentInput:
+      type: object
+      required: [section, fileName, filePath]
+      properties:
+        section:
+          type: string
+          enum: [exames, cardapios]
+        fileName:
+          type: string
+        filePath:
+          type: string
+        mimeType:
+          type: string
+        sizeBytes:
           type: integer
 
     # ── Consultation Schemas ───────────────────────────────

@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { runStartupMigrations } from "./lib/migrate";
 
 const rawPort = process.env["PORT"];
 
@@ -15,11 +16,20 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
+// Run idempotent startup migrations before accepting requests.
+// Failure is fatal: the attachment feature cannot work without its schema.
+runStartupMigrations()
+  .then(() => {
+    logger.info("Startup migrations completed");
+    app.listen(port, (err) => {
+      if (err) {
+        logger.error({ err }, "Error listening on port");
+        process.exit(1);
+      }
+      logger.info({ port }, "Server listening");
+    });
+  })
+  .catch((err) => {
+    logger.error({ err }, "Startup migrations failed — exiting");
     process.exit(1);
-  }
-
-  logger.info({ port }, "Server listening");
-});
+  });

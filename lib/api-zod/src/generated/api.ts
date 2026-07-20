@@ -460,6 +460,67 @@ export const CreateConsultationResponse = zod.object({
 
 
 /**
+ * @summary List consultation attachments
+ */
+export const ListAttachmentsParams = zod.object({
+  "patientId": zod.coerce.number(),
+  "consultationId": zod.coerce.number()
+})
+
+export const ListAttachmentsResponseItem = zod.object({
+  "id": zod.number(),
+  "consultationId": zod.number(),
+  "section": zod.enum(['exames', 'cardapios']),
+  "fileName": zod.string(),
+  "filePath": zod.string(),
+  "mimeType": zod.string().nullish(),
+  "sizeBytes": zod.number().nullish(),
+  "uploadedAt": zod.string()
+})
+export const ListAttachmentsResponse = zod.array(ListAttachmentsResponseItem)
+
+
+/**
+ * @summary Register a new attachment after upload
+ */
+export const CreateAttachmentParams = zod.object({
+  "patientId": zod.coerce.number(),
+  "consultationId": zod.coerce.number()
+})
+
+export const CreateAttachmentBody = zod.object({
+  "section": zod.enum(['exames', 'cardapios']),
+  "fileName": zod.string(),
+  "filePath": zod.string(),
+  "mimeType": zod.string().optional(),
+  "sizeBytes": zod.number().optional()
+})
+
+export const CreateAttachmentResponse = zod.object({
+  "id": zod.number(),
+  "consultationId": zod.number(),
+  "section": zod.enum(['exames', 'cardapios']),
+  "fileName": zod.string(),
+  "filePath": zod.string(),
+  "mimeType": zod.string().nullish(),
+  "sizeBytes": zod.number().nullish(),
+  "uploadedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete an attachment
+ */
+export const DeleteAttachmentParams = zod.object({
+  "patientId": zod.coerce.number(),
+  "consultationId": zod.coerce.number(),
+  "attachmentId": zod.coerce.number()
+})
+
+export const DeleteAttachmentResponse = zod.void()
+
+
+/**
  * @summary Get consultation detail
  */
 export const GetConsultationParams = zod.object({

@@ -11,16 +11,16 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ArrowLeft, Save, TrendingUp, TrendingDown, Minus, Activity, FileText, Check } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, Minus, Activity, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/use-debounce";
-import { FileUpload } from "@/components/file-upload";
+import { FileSection } from "@/components/file-section";
 import { Separator } from "@/components/ui/separator";
 
 export default function ConsultaDetailPage() {
@@ -100,21 +100,6 @@ export default function ConsultaDetailPage() {
   const handleInputChange = (field: keyof ConsultationUpdate, value: string | number | null | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     setIsDirty(true);
-  };
-
-  const handleFileUpload = (field: 'bioimpedancePdfPath' | 'menuPdfPath', path: string) => {
-    updateConsultation.mutate({
-      patientId: pId,
-      consultationId: cId,
-      data: { [field]: path }
-    }, {
-      onSuccess: (updated) => {
-        toast({ title: "Arquivo anexado com sucesso" });
-        queryClient.setQueryData(getGetConsultationQueryKey(pId, cId), (old: any) => 
-          old ? { ...old, ...updated } : old
-        );
-      }
-    });
   };
 
   if (isLoading) {
@@ -264,16 +249,15 @@ export default function ConsultaDetailPage() {
 
             <Card className="shadow-sm">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Exames / Bioimpedância</CardTitle>
-                <CardDescription>PDF com resultados</CardDescription>
+                <CardTitle className="text-lg">Exames</CardTitle>
               </CardHeader>
               <CardContent>
-                <FileUpload 
-                  label="Anexar PDF" 
-                  accept="application/pdf"
-                  currentPath={consultation.bioimpedancePdfPath}
-                  onUploadSuccess={(path) => handleFileUpload('bioimpedancePdfPath', path)}
-                  onRemove={() => handleFileUpload('bioimpedancePdfPath', "")}
+                <FileSection
+                  patientId={pId}
+                  consultationId={cId}
+                  section="exames"
+                  title="Exames"
+                  description="Laudos, bioimpedância, imagens e outros resultados de exames."
                 />
               </CardContent>
             </Card>
@@ -347,23 +331,17 @@ export default function ConsultaDetailPage() {
           )}
 
           {consultation.type === ConsultationDetailType.cardapio && (
-             <Card className="shadow-sm border-primary/20">
-              <CardHeader className="pb-3 flex flex-row items-center justify-between space-y-0">
-                <div>
-                  <CardTitle className="text-lg">Cardápio em PDF</CardTitle>
-                  <CardDescription>O paciente verá este arquivo no app</CardDescription>
-                </div>
-                <div className="size-10 bg-primary/10 text-primary rounded-full flex items-center justify-center">
-                  <FileText className="size-5" />
-                </div>
+            <Card className="shadow-sm border-primary/20">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Cardápios e Arquivos Extras</CardTitle>
               </CardHeader>
               <CardContent>
-                <FileUpload 
-                  label="Anexar Plano Alimentar PDF" 
-                  accept="application/pdf"
-                  currentPath={consultation.menuPdfPath}
-                  onUploadSuccess={(path) => handleFileUpload('menuPdfPath', path)}
-                  onRemove={() => handleFileUpload('menuPdfPath', "")}
+                <FileSection
+                  patientId={pId}
+                  consultationId={cId}
+                  section="cardapios"
+                  title="Cardápios e Arquivos Extras"
+                  description="Planos alimentares, orientações nutricionais e documentos complementares."
                 />
               </CardContent>
             </Card>
