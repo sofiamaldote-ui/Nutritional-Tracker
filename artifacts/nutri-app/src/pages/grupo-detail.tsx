@@ -8,6 +8,7 @@ import {
   useRemoveGroupMember,
   useListPatients,
   getGetGroupQueryKey,
+  getListGroupsQueryKey,
   getListPatientsQueryKey
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -42,7 +43,7 @@ export default function GrupoDetailPage() {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const { data: group, isLoading: isGroupLoading } = useGetGroup(groupId);
+  const { data: group, isLoading: isGroupLoading, isError: isGroupError } = useGetGroup(groupId);
   const { data: allPatients = [] } = useListPatients(
     { search: search || undefined },
     { query: { enabled: isAddMemberOpen, queryKey: getListPatientsQueryKey({ search: search || undefined }) } }
@@ -67,6 +68,7 @@ export default function GrupoDetailPage() {
       onSuccess: () => {
         toast({ title: "Grupo atualizado" });
         queryClient.invalidateQueries({ queryKey: getGetGroupQueryKey(groupId) });
+        queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
         setIsEditOpen(false);
       }
     });
@@ -76,6 +78,7 @@ export default function GrupoDetailPage() {
     deleteGroup.mutate({ id: groupId }, {
       onSuccess: () => {
         toast({ title: "Grupo removido" });
+        queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
         setLocation("/grupos");
       }
     });
@@ -99,8 +102,19 @@ export default function GrupoDetailPage() {
     });
   };
 
-  if (isGroupLoading || !group) {
+  if (isGroupLoading) {
     return <div className="h-32 flex items-center justify-center"><div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>;
+  }
+
+  if (isGroupError || !group) {
+    return (
+      <div className="h-64 flex flex-col items-center justify-center gap-4 text-center">
+        <p className="text-muted-foreground">Não foi possível carregar os dados do grupo.</p>
+        <Button variant="outline" asChild>
+          <Link href="/grupos"><ArrowLeft className="size-4 mr-2" /> Voltar para Grupos</Link>
+        </Button>
+      </div>
+    );
   }
 
   const memberIds = new Set(group.members.map(m => m.id));

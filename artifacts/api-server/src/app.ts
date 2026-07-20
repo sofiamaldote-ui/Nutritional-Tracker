@@ -2,10 +2,15 @@ import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
+
+// Confia no proxy reverso do Replit (necessário para cookies secure + HTTPS)
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({
@@ -35,15 +40,32 @@ if (!sessionSecret) {
   throw new Error("SESSION_SECRET must be set");
 }
 
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL must be set");
+}
+
+// Pool dedicado para o session store (connect-pg-simple precisa de um Pool do pg nativo)
+const sessionPool = new pg.Pool({ connectionString: databaseUrl });
+
+const PgSession = connectPgSimple(session);
+
 app.use(
   session({
+    store: new PgSession({
+      pool: sessionPool,
+      tableName: "session",
+      // Limpa sessões expiradas automaticamente a cada hora
+      pruneSessionInterval: 60 * 60,
+    }),
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     },
   }),
 );

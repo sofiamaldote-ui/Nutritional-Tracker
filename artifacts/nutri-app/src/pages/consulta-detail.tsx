@@ -30,8 +30,8 @@ export default function ConsultaDetailPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: patient } = useGetPatient(pId);
-  const { data: consultation, isLoading } = useGetConsultation(pId, cId);
+  const { data: patient, isError: isPatientError } = useGetPatient(pId);
+  const { data: consultation, isLoading, isError: isConsultationError } = useGetConsultation(pId, cId);
   const updateConsultation = useUpdateConsultation();
 
   const [formData, setFormData] = useState<Partial<ConsultationUpdate>>({});
@@ -117,8 +117,19 @@ export default function ConsultaDetailPage() {
     });
   };
 
-  if (isLoading || !consultation || !patient) {
+  if (isLoading) {
     return <div className="h-32 flex items-center justify-center"><div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" /></div>;
+  }
+
+  if (isConsultationError || isPatientError || !consultation || !patient) {
+    return (
+      <div className="h-64 flex flex-col items-center justify-center gap-4 text-center">
+        <p className="text-muted-foreground">Não foi possível carregar os dados da consulta.</p>
+        <Button variant="outline" asChild>
+          <Link href={`/pacientes/${pId}`}><ArrowLeft className="size-4 mr-2" /> Voltar</Link>
+        </Button>
+      </div>
+    );
   }
 
   const formatType = (type: string) => {

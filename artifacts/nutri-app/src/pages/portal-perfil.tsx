@@ -24,7 +24,7 @@ const passSchema = z.object({
 });
 
 export default function PortalPerfilPage() {
-  const { data: profile, isLoading } = useGetMyProfile();
+  const { data: profile, isLoading, isError } = useGetMyProfile();
   const { toast } = useToast();
   const changePassword = useChangeMyPassword();
 
@@ -52,10 +52,18 @@ export default function PortalPerfilPage() {
     });
   };
 
-  if (isLoading || !profile) {
+  if (isLoading) {
     return (
       <div className="flex justify-center py-20">
         <div className="size-8 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError || !profile) {
+    return (
+      <div className="flex justify-center py-20">
+        <p className="text-muted-foreground">Não foi possível carregar seu perfil. Tente novamente.</p>
       </div>
     );
   }
