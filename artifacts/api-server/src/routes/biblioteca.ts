@@ -44,6 +44,7 @@ async function getPublicationWithRelations(id: number) {
     visibility: pub.visibility,
     videoUrl: pub.videoUrl ?? null,
     pdfPath: pub.pdfPath ?? null,
+    linkUrl: pub.linkUrl ?? null,
     imagePath: pub.imagePath ?? null,
     groupIds,
     patientIds: pubPatients.map(p => p.id),
@@ -91,6 +92,7 @@ router.post("/biblioteca", requireNutritionist, async (req, res): Promise<void> 
     visibility: rest.visibility as any,
     videoUrl: rest.videoUrl ?? null,
     pdfPath: rest.pdfPath ?? null,
+    linkUrl: rest.linkUrl ?? null,
     imagePath: rest.imagePath ?? null,
     publishedAt: status === "publicado" ? new Date() : null,
   }).returning();

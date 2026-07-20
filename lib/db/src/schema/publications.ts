@@ -15,6 +15,7 @@ export const publicationsTable = pgTable("publications", {
   visibility: visibilityEnum("visibility").notNull().default("geral"),
   videoUrl: text("video_url"),
   pdfPath: text("pdf_path"),
+  linkUrl: text("link_url"),
   imagePath: text("image_path"),
   publishedAt: timestamp("published_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

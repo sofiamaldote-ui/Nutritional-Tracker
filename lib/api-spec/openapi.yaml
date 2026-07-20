@@ -1249,6 +1249,8 @@ components:
           type: ["string", "null"]
         pdfPath:
           type: ["string", "null"]
+        linkUrl:
+          type: ["string", "null"]
         imagePath:
           type: ["string", "null"]
         groupIds:
@@ -1292,6 +1294,8 @@ components:
           type: string
         pdfPath:
           type: string
+        linkUrl:
+          type: string
         imagePath:
           type: string
         groupIds:
@@ -1322,6 +1326,8 @@ components:
         videoUrl:
           type: ["string", "null"]
         pdfPath:
+          type: ["string", "null"]
+        linkUrl:
           type: ["string", "null"]
         imagePath:
           type: ["string", "null"]

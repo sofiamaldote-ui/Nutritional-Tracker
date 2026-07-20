@@ -61,6 +61,7 @@ const pubSchema = z.object({
   visibility: z.enum([PublicationVisibility.geral, PublicationVisibility.grupos, PublicationVisibility.pacientes]),
   groupIds: z.array(z.number()).optional(),
   videoUrl: z.string().url("URL inválida").optional().or(z.literal("")),
+  linkUrl: z.string().url("URL inválida").optional().or(z.literal("")),
 });
 
 export default function BibliotecaPage() {
@@ -106,6 +107,7 @@ export default function BibliotecaPage() {
       visibility: PublicationVisibility.geral,
       groupIds: [],
       videoUrl: "",
+      linkUrl: "",
     },
   });
 
@@ -119,6 +121,7 @@ export default function BibliotecaPage() {
         pdfPath: pdfPath || undefined,
         imagePath: imagePath || undefined,
         videoUrl: values.videoUrl || undefined,
+        linkUrl: values.linkUrl || undefined,
         status: PublicationStatus.rascunho // Always draft initially
       }
     }, {
@@ -306,15 +309,33 @@ export default function BibliotecaPage() {
                       )}
                     />
                   ) : (
-                    <div className="space-y-2">
-                      <Label>Arquivo PDF</Label>
-                      <FileUpload 
-                        label="Anexar PDF" 
-                        accept="application/pdf"
-                        currentPath={pdfPath}
-                        onUploadSuccess={setPdfPath}
-                        onRemove={() => setPdfPath("")}
-                      />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Arquivo PDF</Label>
+                        <FileUpload 
+                          label="Anexar PDF" 
+                          accept="application/pdf"
+                          currentPath={pdfPath}
+                          onUploadSuccess={setPdfPath}
+                          onRemove={() => setPdfPath("")}
+                        />
+                      </div>
+
+                      {categoryValue === PublicationCategory.artigo && (
+                        <FormField
+                          control={form.control}
+                          name="linkUrl"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Link Externo (opcional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="https://..." {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
                     </div>
                   )}
 

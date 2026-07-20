@@ -18,6 +18,7 @@ export interface PublicationInput {
   visibility: PublicationInputVisibility;
   videoUrl?: string;
   pdfPath?: string;
+  linkUrl?: string;
   imagePath?: string;
   groupIds?: number[];
   patientIds?: number[];

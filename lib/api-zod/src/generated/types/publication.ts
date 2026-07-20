@@ -23,6 +23,8 @@ export interface Publication {
   /** @nullable */
   pdfPath?: string | null;
   /** @nullable */
+  linkUrl?: string | null;
+  /** @nullable */
   imagePath?: string | null;
   groupIds?: number[];
   patientIds?: number[];

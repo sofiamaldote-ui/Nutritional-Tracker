@@ -418,6 +418,8 @@ export interface Publication {
   /** @nullable */
   pdfPath?: string | null;
   /** @nullable */
+  linkUrl?: string | null;
+  /** @nullable */
   imagePath?: string | null;
   groupIds?: number[];
   patientIds?: number[];
@@ -464,6 +466,7 @@ export interface PublicationInput {
   visibility: PublicationInputVisibility;
   videoUrl?: string;
   pdfPath?: string;
+  linkUrl?: string;
   imagePath?: string;
   groupIds?: number[];
   patientIds?: number[];
@@ -507,6 +510,8 @@ export interface PublicationUpdate {
   videoUrl?: string | null;
   /** @nullable */
   pdfPath?: string | null;
+  /** @nullable */
+  linkUrl?: string | null;
   /** @nullable */
   imagePath?: string | null;
   groupIds?: number[];
