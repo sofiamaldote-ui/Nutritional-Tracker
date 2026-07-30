@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useListPatients, useCreatePatient, useDeletePatient, PatientInputSex, getListPatientsQueryKey } from "@workspace/api-client-react";
+import { useListPatients, useCreatePatient, useDeletePatient, useUpdatePatient, PatientInputSex, Patient, getListPatientsQueryKey } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Plus, UserPlus, MoreHorizontal, Eye, Trash2 } from "lucide-react";
+import { Search, Plus, UserPlus, MoreHorizontal, Eye, Trash2, Pencil } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useDebounce } from "@/hooks/use-debounce";
 import { Button } from "@/components/ui/button";
@@ -63,19 +63,65 @@ const patientSchema = z.object({
   sex: z.enum([PatientInputSex.masculino, PatientInputSex.feminino, PatientInputSex.outro]).optional(),
 });
 
+const editPatientSchema = z.object({
+  name: z.string().min(2, "Nome é obrigatório"),
+  phone: z.string().optional(),
+  birthDate: z.string().optional(),
+  sex: z.enum([PatientInputSex.masculino, PatientInputSex.feminino, PatientInputSex.outro]).optional(),
+});
+
 export default function PacientesPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [createdPatientData, setCreatedPatientData] = useState<{name: string, password: string} | null>(null);
   const [patientToDelete, setPatientToDelete] = useState<{id: number, name: string} | null>(null);
-  
+  const [patientToEdit, setPatientToEdit] = useState<Patient | null>(null);
+
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
   const { data: patients = [], isLoading } = useListPatients({ search: debouncedSearch || undefined });
   const createPatient = useCreatePatient();
   const deletePatient = useDeletePatient();
+  const updatePatient = useUpdatePatient();
+
+  const editForm = useForm<z.infer<typeof editPatientSchema>>({
+    resolver: zodResolver(editPatientSchema),
+    defaultValues: { name: "", phone: "", birthDate: "", sex: undefined },
+  });
+
+  const openEditSheet = (patient: Patient) => {
+    setPatientToEdit(patient);
+    editForm.reset({
+      name: patient.name,
+      phone: patient.phone ?? "",
+      birthDate: patient.birthDate ?? "",
+      sex: (patient.sex as any) ?? undefined,
+    });
+  };
+
+  const handleEditSubmit = (values: z.infer<typeof editPatientSchema>) => {
+    if (!patientToEdit) return;
+    updatePatient.mutate({
+      id: patientToEdit.id,
+      data: {
+        name: values.name,
+        phone: values.phone || null,
+        birthDate: values.birthDate || null,
+        sex: values.sex || null,
+      },
+    }, {
+      onSuccess: () => {
+        toast({ title: "Dados atualizados com sucesso!" });
+        queryClient.invalidateQueries({ queryKey: getListPatientsQueryKey() });
+        setPatientToEdit(null);
+      },
+      onError: () => {
+        toast({ variant: "destructive", title: "Erro ao atualizar paciente." });
+      },
+    });
+  };
 
   const handleDelete = () => {
     if (!patientToDelete) return;
@@ -327,6 +373,13 @@ export default function PacientesPage() {
                             Ver detalhes
                           </Link>
                         </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="flex items-center gap-2 cursor-pointer"
+                          onSelect={() => openEditSheet(patient)}
+                        >
+                          <Pencil className="size-4" />
+                          Editar dados
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           className="text-destructive focus:text-destructive flex items-center gap-2 cursor-pointer"
@@ -364,6 +417,96 @@ export default function PacientesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Patient Sheet */}
+      <Sheet open={!!patientToEdit} onOpenChange={(open) => !open && setPatientToEdit(null)}>
+        <SheetContent className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle>Editar Paciente</SheetTitle>
+            <SheetDescription>
+              Atualize os dados de <strong>{patientToEdit?.name}</strong>. O e-mail de acesso não pode ser alterado.
+            </SheetDescription>
+          </SheetHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nome completo *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: João da Silva" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="space-y-2">
+                <FormLabel className="text-sm font-medium">E-mail</FormLabel>
+                <Input value={patientToEdit?.email ?? ""} disabled className="bg-muted text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">O e-mail não pode ser alterado.</p>
+              </div>
+              <FormField
+                control={editForm.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Telefone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="(11) 99999-9999" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="birthDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Data de Nascimento</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="sex"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sexo Biológico</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={PatientInputSex.masculino}>Masculino</SelectItem>
+                        <SelectItem value={PatientInputSex.feminino}>Feminino</SelectItem>
+                        <SelectItem value={PatientInputSex.outro}>Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="pt-4 flex gap-2">
+                <Button type="button" variant="outline" className="flex-1" onClick={() => setPatientToEdit(null)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" className="flex-1" disabled={updatePatient.isPending}>
+                  {updatePatient.isPending ? "Salvando..." : "Salvar alterações"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </SheetContent>
+      </Sheet>
 
       {/* Provisional Password Dialog */}
       <Dialog open={!!createdPatientData} onOpenChange={(open) => !open && setCreatedPatientData(null)}>
