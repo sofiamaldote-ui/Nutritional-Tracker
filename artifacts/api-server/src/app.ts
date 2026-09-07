@@ -1,11 +1,11 @@
 import express, { type Express } from "express";
-import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import pg from "pg";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import path from "node:path";
 
 const app: Express = express();
 
@@ -31,7 +31,7 @@ app.use(
     },
   }),
 );
-app.use(cors({ origin: true, credentials: true }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -64,7 +64,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: "lax",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
     },
   }),
@@ -77,5 +77,15 @@ app.use((req, _res, next) => {
 });
 
 app.use("/api", router);
+
+const clientDist =
+  process.env.CLIENT_DIST ??
+  path.resolve(import.meta.dirname, "../../nutri-app/dist/public");
+
+app.use(express.static(clientDist));
+
+app.get(/^(?!\/api).*/, (_req, res) => {
+  res.sendFile(path.join(clientDist, "index.html"));
+});
 
 export default app;
