@@ -111,24 +111,52 @@ export default function PortalFeedPage() {
                 {/* PDF Viewer Inline */}
                 {pub.pdfPath && (
                   <div className="mt-6 border rounded-xl overflow-hidden bg-muted/20">
-                    <div className="bg-muted p-3 border-b flex items-center justify-between">
+                    <div className="bg-muted p-3 border-b flex items-center justify-between gap-2 flex-wrap">
                       <span className="text-sm font-medium flex items-center gap-2"><FileText className="size-4 text-primary" /> Visualizador PDF</span>
-                      <Button variant="outline" size="sm" asChild className="h-8">
-                        <a
-                          href={`/api/storage${pub.pdfPath}?download=${encodeURIComponent(`${pub.title || "documento"}.pdf`)}`}
-                          download
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          <Download className="size-3.5 mr-1.5" /> Baixar
-                        </a>
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" asChild className="h-8">
+                          <a
+                            href={`/api/storage${pub.pdfPath}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <ExternalLink className="size-3.5 mr-1.5" /> Abrir em nova aba
+                          </a>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild className="h-8">
+                          <a
+                            href={`/api/storage${pub.pdfPath}?download=${encodeURIComponent(`${pub.title || "documento"}.pdf`)}`}
+                            download
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Download className="size-3.5 mr-1.5" /> Baixar
+                          </a>
+                        </Button>
+                      </div>
                     </div>
-                    <iframe 
-                      src={`/api/storage${pub.pdfPath}#toolbar=0`} 
-                      className="w-full h-[400px] border-0" 
-                      title={pub.title}
-                    />
+                    {/* <object> renderiza o PDF inline nos navegadores que suportam;
+                        quando nao suportam (Safari/Chrome no celular, PDF desativado
+                        no desktop) o conteudo de fallback abaixo aparece no lugar de
+                        um quadro em branco. */}
+                    <object
+                      data={`/api/storage${pub.pdfPath}#toolbar=0&view=FitH`}
+                      type="application/pdf"
+                      className="w-full h-[400px] block"
+                      aria-label={pub.title}
+                    >
+                      <div className="flex flex-col items-center justify-center gap-3 h-[400px] p-6 text-center">
+                        <FileText className="size-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          Seu navegador não abriu o PDF aqui dentro.
+                        </p>
+                        <Button size="sm" asChild>
+                          <a href={`/api/storage${pub.pdfPath}`} target="_blank" rel="noreferrer">
+                            <ExternalLink className="size-3.5 mr-1.5" /> Abrir PDF
+                          </a>
+                        </Button>
+                      </div>
+                    </object>
                   </div>
                 )}
 
