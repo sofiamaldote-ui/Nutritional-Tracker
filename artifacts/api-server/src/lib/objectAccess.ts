@@ -3,8 +3,8 @@ import { sql } from 'drizzle-orm';
 
 export interface Solicitante {
   userId?: number;
-  role?: 'nutricionista' | 'paciente';
-  patientId?: number;
+  role?: string;
+  patientId?: number | null;
 }
 
 /**

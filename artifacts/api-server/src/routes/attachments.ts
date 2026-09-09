@@ -169,8 +169,7 @@ router.delete(
 
     // Delete from storage (best effort — don't fail if file already gone)
     try {
-      const file = await objectStorageService.getObjectEntityFile(attachment.filePath);
-      await file.delete();
+      await objectStorageService.deleteObject(attachment.filePath);
     } catch (err) {
       req.log.warn({ err }, "Could not delete file from storage, proceeding with DB delete");
     }

@@ -1,9 +1,10 @@
 import { randomUUID } from 'crypto';
-import { Readable } from 'stream';
+import { PassThrough, Readable } from 'stream';
 import {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
+  DeleteObjectCommand,
   HeadObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -58,6 +59,90 @@ export interface ObjectStream {
   contentLength?: number;
 }
 
+const GENERIC_CONTENT_TYPES = new Set([
+  'application/octet-stream',
+  'binary/octet-stream',
+]);
+
+/**
+ * Detecta o tipo do arquivo pelos primeiros bytes (magic numbers).
+ * Necessario porque os anexos migrados do storage antigo foram
+ * enviados ao R2 sem Content-Type (ver subir-r2.mjs).
+ */
+function sniffMimeType(head: Buffer): string | undefined {
+  if (head.length >= 4 && head.toString('ascii', 0, 4) === '%PDF') {
+    return 'application/pdf';
+  }
+  if (
+    head.length >= 8 &&
+    head[0] === 0x89 && head[1] === 0x50 && head[2] === 0x4e && head[3] === 0x47
+  ) {
+    return 'image/png';
+  }
+  if (head.length >= 3 && head[0] === 0xff && head[1] === 0xd8 && head[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (
+    head.length >= 6 &&
+    (head.toString('ascii', 0, 6) === 'GIF87a' || head.toString('ascii', 0, 6) === 'GIF89a')
+  ) {
+    return 'image/gif';
+  }
+  if (
+    head.length >= 12 &&
+    head.toString('ascii', 0, 4) === 'RIFF' &&
+    head.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return 'image/webp';
+  }
+  return undefined;
+}
+
+/**
+ * Espia os primeiros bytes do stream para identificar o tipo real do
+ * arquivo, sem carregar o conteudo inteiro em memoria. Devolve um novo
+ * stream equivalente ao original (com os bytes ja lidos reinseridos).
+ */
+function sniffStream(source: Readable): Promise<{ mimeType?: string; stream: Readable }> {
+  const SNIFF_BYTES = 16;
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let bufferedLength = 0;
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      source.removeListener('data', onData);
+      source.removeListener('end', onEnd);
+      source.removeListener('error', onError);
+
+      const head = Buffer.concat(chunks, bufferedLength);
+      const merged = new PassThrough();
+      if (head.length > 0) merged.write(head);
+      source.pipe(merged);
+
+      resolve({ mimeType: sniffMimeType(head), stream: merged });
+    };
+
+    const onData = (chunk: Buffer) => {
+      chunks.push(chunk);
+      bufferedLength += chunk.length;
+      if (bufferedLength >= SNIFF_BYTES) finish();
+    };
+    const onEnd = () => finish();
+    const onError = (err: Error) => {
+      if (settled) return;
+      settled = true;
+      reject(err);
+    };
+
+    source.on('data', onData);
+    source.on('end', onEnd);
+    source.on('error', onError);
+  });
+}
+
 export class ObjectStorageService {
   /** Gera uma URL assinada de escrita, valida por 15 minutos. */
   async getObjectEntityUploadURL(): Promise<{
@@ -89,9 +174,22 @@ export class ObjectStorageService {
         throw new ObjectNotFoundError();
       }
 
+      const contentTypeDoR2 = resultado.ContentType?.toLowerCase();
+      if (contentTypeDoR2 && !GENERIC_CONTENT_TYPES.has(contentTypeDoR2)) {
+        return {
+          stream: resultado.Body as Readable,
+          contentType: resultado.ContentType!,
+          contentLength: resultado.ContentLength,
+        };
+      }
+
+      // R2 nao devolveu um Content-Type util (comum em anexos migrados do
+      // storage antigo, que foram enviados sem esse metadado). Detecta o
+      // tipo pelos bytes do proprio arquivo antes de servir.
+      const { mimeType, stream } = await sniffStream(resultado.Body as Readable);
       return {
-        stream: resultado.Body as Readable,
-        contentType: resultado.ContentType ?? 'application/octet-stream',
+        stream,
+        contentType: mimeType ?? resultado.ContentType ?? 'application/octet-stream',
         contentLength: resultado.ContentLength,
       };
     } catch (erro: unknown) {
@@ -101,6 +199,12 @@ export class ObjectStorageService {
       }
       throw erro;
     }
+  }
+
+  /** Remove o objeto do R2. */
+  async deleteObject(objectPath: string): Promise<void> {
+    const key = objectPathToKey(objectPath);
+    await r2.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   }
 
   async objectExists(objectPath: string): Promise<boolean> {

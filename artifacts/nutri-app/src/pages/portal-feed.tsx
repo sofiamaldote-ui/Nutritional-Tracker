@@ -5,12 +5,13 @@ import {
 } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { BookOpen, PlayCircle, FileCode2, FileText, Search, Download } from "lucide-react";
+import { BookOpen, PlayCircle, FileCode2, FileText, Search, Download, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/empty-state";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Linkify } from "@/components/linkify";
 
 export default function PortalFeedPage() {
   const [categoryFilter, setCategoryFilter] = useState<GetPatientFeedCategory>(GetPatientFeedCategory.all);
@@ -96,7 +97,15 @@ export default function PortalFeedPage() {
                 
                 <h2 className="text-2xl font-bold font-display text-foreground mb-3">{pub.title}</h2>
                 {pub.description && (
-                  <p className="text-muted-foreground leading-relaxed mb-6">{pub.description}</p>
+                  <Linkify text={pub.description} className="block text-muted-foreground leading-relaxed mb-6" />
+                )}
+
+                {pub.linkUrl && (
+                  <Button variant="outline" size="sm" asChild className="mb-6">
+                    <a href={pub.linkUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="size-3.5 mr-1.5" /> Acessar link
+                    </a>
+                  </Button>
                 )}
 
                 {/* PDF Viewer Inline */}

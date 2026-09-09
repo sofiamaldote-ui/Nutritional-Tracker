@@ -74,6 +74,7 @@ router.get("/portal/feed", requirePatient, async (req, res): Promise<void> => {
     visibility: p.visibility,
     videoUrl: p.videoUrl ?? null,
     pdfPath: p.pdfPath ?? null,
+    linkUrl: p.linkUrl ?? null,
     imagePath: p.imagePath ?? null,
     groupIds: [],
     patientIds: [],

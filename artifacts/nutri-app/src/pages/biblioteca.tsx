@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Linkify } from "@/components/linkify";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -421,7 +422,9 @@ export default function BibliotecaPage() {
                 <div className="flex justify-between items-start gap-2">
                   <CardTitle className="text-lg line-clamp-2 leading-tight">{pub.title}</CardTitle>
                 </div>
-                <CardDescription className="line-clamp-2 text-xs mt-2">{pub.description}</CardDescription>
+                <CardDescription className="line-clamp-2 text-xs mt-2">
+                  <Linkify text={pub.description ?? ""} />
+                </CardDescription>
               </CardHeader>
               
               <CardContent className="flex-1 pb-4">

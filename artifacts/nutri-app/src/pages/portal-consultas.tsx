@@ -14,6 +14,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
+import { Linkify } from "@/components/linkify";
 
 function ConsultationDetails({ consultationId }: { consultationId: number }) {
   const { data: detail, isLoading } = useGetMyConsultation(consultationId, {
@@ -41,7 +42,7 @@ function ConsultationDetails({ consultationId }: { consultationId: number }) {
                 <div><span className="text-muted-foreground block text-xs">Meta Calórica</span><span className="font-medium">{detail.vetKcal} kcal/dia</span></div>
               )}
               {detail.additionalGuidance && (
-                <div><span className="text-muted-foreground block text-xs">Orientações Gerais</span><span className="font-medium whitespace-pre-wrap">{detail.additionalGuidance}</span></div>
+                <div><span className="text-muted-foreground block text-xs">Orientações Gerais</span><Linkify text={detail.additionalGuidance} className="font-medium whitespace-pre-wrap" /></div>
               )}
             </div>
           </div>
@@ -72,7 +73,7 @@ function ConsultationDetails({ consultationId }: { consultationId: number }) {
         {detail.notes && (
           <div className="space-y-3">
             <h4 className="font-display font-semibold text-primary">Anotações</h4>
-            <p className="text-sm bg-yellow-50/50 border border-yellow-100 rounded-lg p-3 whitespace-pre-wrap">{detail.notes}</p>
+            <Linkify text={detail.notes} className="block text-sm bg-yellow-50/50 border border-yellow-100 rounded-lg p-3 whitespace-pre-wrap" />
           </div>
         )}
       </div>
