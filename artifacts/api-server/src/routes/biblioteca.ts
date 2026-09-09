@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray } from "drizzle-orm";
 import { db, publicationsTable, publicationGroupsTable, publicationPatientsTable, groupsTable } from "@workspace/db";
 import {
   ListPublicationsQueryParams,
@@ -32,7 +32,7 @@ async function getPublicationWithRelations(id: number) {
   const groups = groupIds.length > 0
     ? await db.select({ id: groupsTable.id, name: groupsTable.name, color: groupsTable.color })
         .from(groupsTable)
-        .where(eq(groupsTable.id, groupIds[0])) // simplified
+        .where(inArray(groupsTable.id, groupIds))
     : [];
 
   return {

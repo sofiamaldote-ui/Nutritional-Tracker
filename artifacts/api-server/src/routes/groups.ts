@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, count } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { db, groupsTable, patientGroupsTable, patientsTable, usersTable } from "@workspace/db";
 import {
   CreateGroupBody,
@@ -195,7 +195,12 @@ router.delete("/groups/:id/members/:patientId", requireNutritionist, async (req,
 
   await db
     .delete(patientGroupsTable)
-    .where(eq(patientGroupsTable.groupId, params.data.id));
+    .where(
+      and(
+        eq(patientGroupsTable.groupId, params.data.id),
+        eq(patientGroupsTable.patientId, params.data.patientId),
+      ),
+    );
 
   res.sendStatus(204);
 });
