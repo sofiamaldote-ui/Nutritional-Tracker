@@ -144,8 +144,15 @@ function sniffStream(source: Readable): Promise<{ mimeType?: string; stream: Rea
 }
 
 export class ObjectStorageService {
-  /** Gera uma URL assinada de escrita, valida por 15 minutos. */
-  async getObjectEntityUploadURL(): Promise<{
+  /**
+   * Gera uma URL assinada de escrita, valida por 15 minutos.
+   *
+   * Quando o cliente informa o `contentType`, ele entra na assinatura para
+   * que o R2 guarde o objeto ja com o Content-Type certo (o navegador precisa
+   * enviar exatamente esse mesmo header no PUT). Sem isso o objeto fica como
+   * application/octet-stream e depende da deteccao por magic bytes na leitura.
+   */
+  async getObjectEntityUploadURL(contentType?: string): Promise<{
     uploadURL: string;
     objectPath: string;
   }> {
@@ -154,7 +161,11 @@ export class ObjectStorageService {
 
     const uploadURL = await getSignedUrl(
       r2,
-      new PutObjectCommand({ Bucket: bucket, Key: key }),
+      new PutObjectCommand({
+        Bucket: bucket,
+        Key: key,
+        ...(contentType ? { ContentType: contentType } : {}),
+      }),
       { expiresIn: 900 },
     );
 

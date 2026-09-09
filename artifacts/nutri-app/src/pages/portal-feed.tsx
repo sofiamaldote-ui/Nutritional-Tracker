@@ -114,7 +114,12 @@ export default function PortalFeedPage() {
                     <div className="bg-muted p-3 border-b flex items-center justify-between">
                       <span className="text-sm font-medium flex items-center gap-2"><FileText className="size-4 text-primary" /> Visualizador PDF</span>
                       <Button variant="outline" size="sm" asChild className="h-8">
-                        <a href={`/api/storage${pub.pdfPath}`} download target="_blank" rel="noreferrer">
+                        <a
+                          href={`/api/storage${pub.pdfPath}?download=${encodeURIComponent(`${pub.title || "documento"}.pdf`)}`}
+                          download
+                          target="_blank"
+                          rel="noreferrer"
+                        >
                           <Download className="size-3.5 mr-1.5" /> Baixar
                         </a>
                       </Button>

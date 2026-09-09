@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useRequestUploadUrl } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { UploadCloud, File as FileIcon, X, Loader2 } from "lucide-react";
 
 interface FileUploadProps {
@@ -15,6 +16,7 @@ export function FileUpload({ onUploadSuccess, accept = "*/*", label = "Fazer upl
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const requestUploadUrl = useRequestUploadUrl();
+  const { toast } = useToast();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -39,12 +41,17 @@ export function FileUpload({ onUploadSuccess, accept = "*/*", label = "Fazer upl
       });
 
       if (!response.ok) {
-        throw new Error("Failed to upload file to GCS");
+        throw new Error(`Falha no upload para o storage (HTTP ${response.status})`);
       }
 
       onUploadSuccess(objectPath);
     } catch (err) {
       console.error("Upload error", err);
+      toast({
+        variant: "destructive",
+        title: "Não foi possível enviar o arquivo",
+        description: "Verifique a conexão e as permissões do storage e tente novamente.",
+      });
     } finally {
       setIsUploading(false);
       if (inputRef.current) {

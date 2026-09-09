@@ -71,13 +71,13 @@ export function FileSection({ patientId, consultationId, section, title, descrip
           data: { name: file.name, size: file.size, contentType: file.type || "application/octet-stream" },
         });
 
-        // 2. Upload directly to GCS
+        // 2. Envia o arquivo direto para o R2 pela URL assinada
         const res = await fetch(uploadURL, {
           method: "PUT",
           headers: { "Content-Type": file.type || "application/octet-stream" },
           body: file,
         });
-        if (!res.ok) throw new Error("Falha no upload");
+        if (!res.ok) throw new Error(`Falha no upload (HTTP ${res.status})`);
 
         // 3. Register in DB
         await createAttachment.mutateAsync({
